@@ -1,0 +1,10 @@
+{
+  "name": "polla-adictos",
+  "version": "1.0.0",
+  "scripts": {
+    "scrape": "node scraper/scrape.js"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0"
+  }
+}
