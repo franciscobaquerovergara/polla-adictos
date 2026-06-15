@@ -13,7 +13,7 @@ async function main() {
 
   // ── Login ──────────────────────────────────────────────
   console.log('🔐 Logging in...');
-  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'load' });
   await page.waitForTimeout(1500);
 
   const emailField = await page.$('input[type="email"], input[name="email"], input[placeholder*="mail" i], input[placeholder*="correo" i]');
@@ -22,13 +22,13 @@ async function main() {
   await emailField.fill(process.env.POLLAYA_EMAIL);
   await passField.fill(process.env.POLLAYA_PASSWORD);
   await passField.press('Enter');
-  await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => {});
+  await page.waitForNavigation({ waitUntil: 'load', timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(2000);
   console.log('✅ Logged in, at:', page.url());
 
   // ── Standings + participant links ──────────────────────
   console.log('📊 Scraping standings...');
-  await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/posiciones`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/posiciones`, { waitUntil: 'load' });
   await page.waitForTimeout(2000);
 
   // Load all players
@@ -65,7 +65,7 @@ async function main() {
 
   // ── Match results ──────────────────────────────────────
   console.log('⚽ Scraping match results...');
-  await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/pronosticos`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/pronosticos`, { waitUntil: 'load' });
   await page.waitForTimeout(2500);
 
   const rawText = await page.evaluate(() => document.body.textContent);
@@ -82,7 +82,7 @@ async function main() {
         const predUrl = p.href.includes('pronosticos')
           ? p.href
           : p.href.replace(/\/$/, '') + '/pronosticos';
-        await page.goto(predUrl, { waitUntil: 'networkidle', timeout: 12000 });
+        await page.goto(predUrl, { waitUntil: 'load', timeout: 12000 });
         await page.waitForTimeout(1000);
         const text = await page.evaluate(() => document.body.textContent);
         const preds = parseUserPredictions(text);
