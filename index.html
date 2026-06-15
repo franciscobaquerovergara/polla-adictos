@@ -3,356 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polla Adictos â Copa Mundial 2026</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-:root {
-  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3352;
-  --accent:#e8c24a;--accent2:#4a90e8;--green:#3dd68c;--red:#e85a5a;
-  --text:#e8eaf0;--muted:#7b82a0;--hi:#c07af0;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI'system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-
-header{background:linear-gradient(135deg,#1a1d27,#111420);border-bottom:2px solid var(--accent);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.header-left{display:flex;align-items:center;gap:14px}
-.header-title h1{font-size:20px;font-weight:800;color:var(--accent);letter-spacing:1px}
-.header-title p{font-size:11px;color:var(--muted);margin-top:2px}
-.header-right{display:flex;align-items:center;gap:12px}
-.last-updated{font-size:10px;color:var(--muted)}
-#refresh-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:.2s}
-#refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
-
-.nav-tabs{display:flex;gap:4px;background:var(--surface);padding:6px 28px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
-.nav-tabs::-webkit-scrollbar{display:none}
-.tab-btn{padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:.2s;background:transparent;color:var(--muted)}
-.tab-btn.active{background:var(--accent);color:#111}
-.tab-btn:hover:not(.active){background:var(--surface2);color:var(--text)}
-
-main{padding:20px 28px;max-width:1400px;margin:0 auto}
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-
-/* Search bar */
-.search-bar{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
-.search-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 14px;font-size:13px;width:220px;outline:none}
-.search-input:focus{border-color:var(--accent2)}
-.highlight-badge{background:var(--hi);color:#111;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;display:none}
-
-/* Hero stats */
-.hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 16px;display:flex;flex-direction:column;gap:5px}
-.stat-card.leader-card{border-color:var(--accent)}
-.stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
-.stat-value{font-size:30px;font-weight:900;line-height:1}
-.stat-sub{font-size:11px;color:var(--muted)}
-.gold{color:var(--accent)}
-.blue{color:var(--accent2)}
-.green{color:var(--green)}
-
-/* Layout */
-.two-col{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
-@media(max-width:880px){.two-col{grid-template-columns:1fr}}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-header h3{font-size:13px;font-weight:700}
-.card-body{padding:14px 18px}
-
-/* Standings */
-.standings-table{width:100%;border-collapse:collapse}
-.standings-table th{text-align:left;padding:9px 10px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0}
-.standings-table td{padding:9px 10px;font-size:13px;border-bottom:1px solid #1e2238;transition:.15s}
-.standings-table tbody tr:hover td{background:var(--surface2)}
-.standings-table tbody tr.highlighted td{background:#271b38}
-.standings-table tbody tr.highlighted:hover td{background:#2f2040}
-.pos-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:10px;font-weight:800}
-.p1{background:#e8c24a22;color:var(--accent);border:1px solid var(--accent)}
-.p2{background:#c0c0c022;color:#c0c0c0;border:1px solid #c0c0c0}
-.p3{background:#cd7f3222;color:#cd7f32;border:1px solid #cd7f32}
-.ph{background:#c07af022;color:var(--hi);border:1px solid var(--hi)}
-.pn{background:var(--surface2);color:var(--muted);font-size:10px}
-.score-bar{height:5px;border-radius:3px;background:var(--accent2);min-width:2px;transition:width .4s}
-.score-bar.top{background:var(--accent)}
-.score-bar.hi{background:var(--hi)}
-.gap-chip{font-size:10px;padding:1px 6px;border-radius:7px;background:var(--surface2);color:var(--muted)}
-.gap-chip.lead{background:#e8c24a22;color:var(--accent)}
-.gap-chip.close{background:#3dd68c22;color:var(--green)}
-.scroll-y{overflow-y:auto;max-height:520px}
-
-/* Mini list */
-.mini-list-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
-.mini-list-item:last-child{border:none}
-.mini-pos{font-size:11px;color:var(--muted);min-width:22px}
-.mini-name{font-size:13px;flex:1;padding:0 8px}
-.mini-pts{font-size:14px;font-weight:800}
-
-/* Matches */
-.matches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.match-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px}
-.match-meta{font-size:10px;color:var(--muted);margin-bottom:7px}
-.match-teams{display:flex;align-items:center;justify-content:space-between=gap:8px}
-.team{text-align:center;flex:1}
-.team-code{font-size:13px;font-weight:800;letter-spacing:.5px}
-.team-score{font-size:20px;font-weight:900}
-.vs-sep{font-size:10px;color:var(--muted);font-weight:600}
-.ft-badge{display:inline-block;margin-top:5px;font-size:9px;padding:1px 7px;border-radius:7px;font-weight:700}
-.ft-done{background:#3dd68c22;color:var(--green)}
-
-/* Rules */
-.rules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
-.rule-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px}
-.rule-pts{font-size:20px;font-weight:900;min-width:32px;text-align:center}
-.rule-desc strong{display:block;font-size:12px;color:var(--text);margin-bottom:2px}
-.rule-desc span{font-size:11px;color:var(--muted)}
-
-/* Charts */
-.chart-wrap{position:relative}
-.section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;margin-top:20px;display:flex;align-items:center;gap:8px}
-.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
-
-/* Loading */
-#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;transition:opacity .4s}
-#loading.hidden{opacity:0;pointer-events:none}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loading p{color:var(--muted);font-size:13px}
-
-footer{text-align:center;padding:20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:32px}
-footer a{color:var(--accent2);text-decoration:none}
-</qtyle>
-</head>
-<body>
-<div id="loading">
-  <div class="spinner"></div>
-  <p>Cargando datos de la pollaâ¦</p>
-</div>
-
-<header>
-  <div class="header-left">
-    <span style="font-size:32px">â½</span>
-    <div class="header-title">
-      <h1>POLLA ADICTOS â MUNDIAL 2026</h1>
-      <p id="header-sub">Copa Mundial FIFA 2026 Â· Cargandoâ¦</p>
-    </div>
-  </div>
-  <div class="header-right">
-    <span class="last-updated" id="last-updated"></span>
-    <button id="refresh-btn" onclick="loadData()">â» Actualizar</button>
-  </div>
-</header>
-
-<nav class="nav-tabs">
-  <button class="tab-btn active" onclick="showTab('standings',this)">ð ClasificaciÃ³n</button>
-  <button class="tab-btn" onclick="showTab('charts',this)">ð AnalÃ­tica</button>
-  <button class="tab-btn" onclick="showTab('matches',this)">â½ Partidos</button>
-  <button class="tab-btn" onclick="showTab('rules',this)">ð Reglas</button>
-</nav>
-
-<main>
-
-<!-- STANDINGS -->
-<div id="tab-standings" class="tab-panel active">
-  <div class="search-bar">
-    <input class="search-input" id="search" type="text" placeholder="ð Busca tu nombre para resaltarteâ¦" oninput="onSearch(this.value)">
-    <span class="highlight-badge" id="hi-badge"></span>
-    <span style="font-size:12px;color:var(--muted)" id="count-label"></span>
-  </div>
-  <div class="hero-grid" id="hero-stats"></div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-header">
-        <h3>ð Tabla completa</h3>
-        <span style="font-size:11px;color:var(--muted)" id="podium-note"></span>
-      </div>
-      <div class="scroll-y">
-        <table class="standings-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Participante</th><th style="text-align:right">Pts</th>
-              <th>LÃ­der -</th><th>Barra</th>
-            </tr>
-          </thead>
-          <tbody id="standings-body"></tbody>
-        </table>
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card">
-        <div class="card-header"><h3>ð Top 5</h3></div>
-        <div class="card-body" id="top5"></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>ð Ãltimos 5</h3></div>
-        <div class="card-body" id="bottom5"></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>ð¯ En el podio</h3><span style="font-size:10px;color:var(--muted)">Top 3 actuales</span></div>
-        <div class="card-body" id="podium-card"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- CHARTS -->
-<div id="tab-charts" class="tab-panel">
-  <p class="section-title">DistribuciÃ³n del grupo</p>
-  <div class="two-col" style="margin-bottom:18px">
-    <div class="card">
-      <div class="card-header"><h3>ð Histograma de puntajes</h3></div>
-      <div class="card-body">
-        <div class="chart-wrap" style="height:260px"><canvas id="histChart"></canvas></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3>ð Clustering del grupo</h3></div>
-      <div class="card-body">
-        <div class="chart-wrap" style="height:260px"><canvas id="clusterChart"></canvas></div>
-      </div>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:18px">
-    <div class="card-header"><h3>ð Puntajes â todos los participantes</h3></div>
-    <div class="card-body">
-      <div class="chart-wrap" style="height:300px"><canvas id="allChart"></canvas></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header"><h3>ð Carrera por la punta â Top 10 (proyectado)</h3>
-      <span style="font-size:10px;color:var(--muted)">DistribuciÃ³n proporcional sobre partidos jugados</span></div>
-    <div class="card-body">
-      <div class="chart-wrap" style="height:300px"><canvas id="raceChart"></canvas></div>
-    </div>
-  </div>
-</div>
-
-<!-- MATCHES -->
-<div id="tab-matches" class="tab-panel">
-  <div class="hero-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:18px" id="match-stats"></div>
-  <p class="section-title">Resultados jugados</p>
-  <div class="matches-grid" id="matches-list"></div>
-</div>
-
-<!-- RULES -->
-<div id="tab-rules" class="tab-panel">
-  <p class="section-title">PuntuaciÃ³n por partido</p>
-  <div class="rules-grid" style="margin-bottom:22px">
-    <div class="rule-item"><div class="rule-pts gold">4</div><div class="rule-desc"><strong>Marcador exacto</strong><span>Acertar el resultado completo</span></div></div>
-    <div class="rule-item"><div class="rule-pts blue">2</div><div class="rule-desc"><strong>SelecciÃ³n del ganador</strong><span>Acertar quiÃ©n gana o empate</span></div></div>
-    <div class="rule-item"><div class="rule-pts green">1</div><div class="rule-desc"><strong>Goles de un equipo</strong><span>Acertar los goles de uno</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">1</div><div class="rule-desc"><strong>Diferencia de goles</strong><span>Acertar la diferencia</span></div></div>
-  </div>
-  <p class="section-title">Predicciones del torneo</p>
-  <div class="rules-grid" style="margin-bottom:22px">
-    <div class="rule-item"><div class="rule-pts gold">20</div><div class="rule-desc"><strong>CampeÃ³n</strong><span>El ganador del torneo</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:#c0c0c0">15</div><div class="rule-desc"><strong>SubcampeÃ³n</strong><span>El finalista perdedor</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:#cd7f32">12</div><div class="rule-desc"><strong>Tercer puesto</strong><span>El ganador del tercer lugar</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>Goleador</strong><span>MÃ¡ximo anotador del torneo</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>MÃ¡ximo asistente</strong><span>Jugador con mÃ¡s asistencias</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>Mejor portero</strong><span>El mejor arquero del torneo</span></div></div>
-  </div>
-  <p class="section-title">InformaciÃ³n del grupo</p>
-  <div class="rules-grid" id="group-info"></div>
-</div>
-</main>
-<footer>
-â½ <strong>Polla Adictos</strong> â Copa Mundial FIFA 2026 Â·
-  Datos desde <a href="https://game.pollaya.com/mis-grupos/84178/posiciones" target="_blank">Pollaya</a> Â·
-  Actualizado automÃ¡ticamente cada 30 min Â·
-  <a href="https://github.com/franciscobaquerovergara/polla-adictos" target="_blank">CÃ³digo fuente</a>
-</footer>
-<script>
-let DATA = null;
-let chartInstances = {};
-let chartsBuilt = false;
-
-// Load data
-async function loadData() {
-  document.getElementById('refresh-btn').textContent = 'â¦';
-  try {
-    const r = await fetch('./data.json?t=' + Date.now());
-    DATA = await r.json();
-    render();
-  } catch(e) {
-    console.error(e);
-    alert('No se pudo cargar data.json');
-  }
-  document.getElementById('refresh-btn').textContent = 'â» Actualizar';
-}
-
-function render() {
-  const { standings, group, matchesPlayed, matchesPlayed_count, totalMatches, lastUpdated } = DATA;
-  const leader = standings[0];
-  const avg = (standings.reduce((s,p)=>s++p.pts,0)/standings.length).toFixed(1);
-  const median = standings[Math.floor(standings.length/2)].pts;
-  document.getElementById('header-sub').textContent =
-    `${group.tournament} Â· ${group.participants} participantes Â· ${group.name}`;
-  const lu = new Date(lastUpdated);
-  document.getElementById('last-updated').textContent =
-    'Actualizado: ' + lu.toLocaleString('es-CO', {dateStyle:'short',timeStyle:'short'});
-  document.getElementById('hero-stats').innerHTML = `
-    <div class="stat-card leader-card"><span class="stat-label">ð¥ LÃ­der actual</span><span class="stat-value gold">${leader.pts}</span><span class="stat-sub">${leader.name}</span></div>
-    <div class="stat-card"><span class="stat-label">ð¥ Participantes</span><span class="stat-value blue">${group.participants}</span><span class="stat-sub">${group.name}</span></div>
-    <div class="stat-card"><span class="stat-label">â½ Partidos jugados</span><span class="stat-value green">${matchesPlayed_count}</span><span class="stat-sub">de ${totalMatches} en el torneo</span></div>
-    <div class="stat-card"><span class="stat-label">ð Promedio</span><span class="stat-value">${avg}</span><span class="stat-sub">Mediana: ${median} pts</span></div>
-    <div class="stat-card"><span class="stat-label">ð Avance del torneo</span><span class="stat-value" style="color:var(--accent2)">${Math.round(matchesPlayed_count/totalMatches*100)}%</span><span class="stat-sub">${totalMatches-matchesPlayed_count} partidos restantes</span></div>
-  `;
-  document.getElementById('count-label').textContent = `${standings.length} participantes`;
-  renderTable(standings, '');
-  document.getElementById('top5').innerHTML = standings.slice(0,5).map(p => miniRow(p, leader.pts)).join('');
-  document.getElementById('bottom5').innerHTML = [...standings].slice(-5).reverse().map(p => miniRow(p, leader.pts)).join('');
-  document.getElementById('podium-card').innerHTML = standings.slice(0,3).map((p,i) => `
-    <div class="mini-list-item"><span class="mini-pos">${['ð¥','ð¥','ð¥'][i]}</span><span class="mini-name">${p.name}</span><span class="mini-pts ${i===0?'gold':''}">${p.pts}</span></div>`).join('');
-  document.getElementById('podium-note').textContent = `${standings[0].pts - standings[2].pts} pts separan el podio`;
-  document.getElementById('match-stats').innerHTML = `
-    <div class="stat-card"><span class="stat-label">â Jugados</span><span class="stat-value green">${matchesPlayed_count}</span></div>
-    <div class="stat-card"><span class="stat-label">â³ Pendientes</span><span class="stat-value blue">${totalMatches-matchesPlayed_count}</span></div>
-    <div class="stat-card"><span class="stat-label">â½ Goles totales</span><span class="stat-value gold">${matchesPlayed.reduce((s,m)=>s+m.hg+m.ag,0)}</span></div>
-    <div class="stat-card"><span class="stat-label">ð¯ Promedio goles</span><span class="stat-value">${(matchesPlayed.reduce((s,m)=>s+m.hg+m.ag,0)/matchesPlayed.length).toFixed(1)}</span><span class="stat-sub">por partido</span></div>
-  `;
-  document.getElementById('matches-list').innerHTML = [...matchesPlayed].reverse().map(m => matchCard(m)).join('');
-  document.getElementById('group-info').innerHTML = `
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">ð¤</div><div class="rule-desc"><strong>Administrador</strong><span>${group.admin}</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">â°</div><div class="rule-desc"><strong>Cierre pronÃ³sticos</strong><span>15 min antes de cada partido</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">ð</div><div class="rule-desc"><strong>Marcadores ocultos</strong><span>No visibles antes del partido</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">ð¤</div><div class="rule-desc"><strong>Desempate</strong><span>Los integrantes deciden</span></div></div>
-  `;
-  document.getElementById('loading').classList.add('hidden');
-  if (chartsBuilt) rebuildCharts();
-}
-
-function renderTable(list, query) {
-  const leader = DATA.standings[0].pts;
-  document.getElementById('standings-body').innerHTML = list.map(p => {
-    const gap = leader - p.pts;
-    const pct = Math.round(p.pts / leader * 100);
-    const isHi = query && p.name.toLowerCase().includes(query.toLowerCase());
-    let badge = `<span class="pos-badge pn">${p.pos}</span>`;
-    if (p.pos===1) badge = `<span class="pos-badge p1">1</span>`;
-    else if (p.pos===2) badge = `<span class="pos-badge p2">2</span>`;
-    else if (p.pos===3) badge = `<span class="pos-badge p3">3</span>`;
-    else if (isHi) badge = `<span class="pos-badge ph">${p.pos}</span>`;
-    let gapChip = `<span class="gap-chip">-${gap}</span>`;
-    if (gap===0) gapChip = `<span class="gap-chip lead">LÃ­der</span>`;
-    else if (gap<=5) gapChip = `<span class="gap-chip close">-${gap}</span>`;
-    const barClass = p.pos===1?'top':isHi?'hi':'';
-    return `<tr class="${isHi?'highlighted':''}"><td>${badge}</td><td style="${isHi?'font-weight:700;color:var(--hi)':''}">${p.name}</td><td style="text-align:right;font-weight:800;font-size:14px;${p.pos===1?'color:var(--accent)':isHi?'color:var(--hi)':''}">${p.pts}</td><td>${gapChip}</td><td><div class="score-bar ${barClass}" style="width:${pct*1.6}px"></div></td></tr>`;
-  }).join('');
-}
-
-function miniRow(p, leaderPts) {
-  return `<div class="mini-list-item"><span class="mini-pos">${p.pos}Â°</span><span class="mini-name">${p.name}</span><span class="mini-pts ${p.pos===1?'gold':''}">${p.pts}</span></div>`;
-}
-
-function matchCard(m) {
-  const winner = m.hg>m.ag?'home':m.hg<m.ag?'away':'draw';
-  return `<div class="match-card"><div class="match-meta">Grupo ${m.group} Â· ${m.date}</div><div class="match-teams"><div class="team"><div class="team-code" style="${winner==='home'?'color:var(--green)':''}">${m.home}</div><div class="team-score">${m.hg}</div></div><div class="vs-sep">â</div><div class="team"><div class="team-score">${m.ag}</div><div class="team-code" style="${winner==='away'?'color:var(--green)':''}">${m.away}</div></div></div><div style="margin-top:5px"><span class="ft-badge ft-done">FT</span></div></div>`;
-}
-
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polla Adictos â Copa Mundial 2026</title>
+<title>Polla Adictos — Copa Mundial 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
@@ -474,28 +125,28 @@ footer a{color:var(--accent2);text-decoration:none}
 
 <div id="loading">
   <div class="spinner"></div>
-  <p>Cargando datos de la pollaâ¦</p>
+  <p>Cargando datos de la polla…</p>
 </div>
 
 <header>
   <div class="header-left">
-    <span style="font-size:32px">â½</span>
+    <span style="font-size:32px">⚽</span>
     <div class="header-title">
-      <h1>POLLA ADICTOS â MUNDIAL 2026</h1>
-      <p id="header-sub">Copa Mundial FIFA 2026 Â· Cargandoâ¦</p>
+      <h1>POLLA ADICTOS — MUNDIAL 2026</h1>
+      <p id="header-sub">Copa Mundial FIFA 2026 · Cargando…</p>
     </div>
   </div>
   <div class="header-right">
     <span class="last-updated" id="last-updated"></span>
-    <button id="refresh-btn" onclick="loadData()">â» Actualizar</button>
+    <button id="refresh-btn" onclick="loadData()">↻ Actualizar</button>
   </div>
 </header>
 
 <nav class="nav-tabs">
-  <button class="tab-btn active" onclick="showTab('standings',this)">ð ClasificaciÃ³n</button>
-  <button class="tab-btn" onclick="showTab('charts',this)">ð AnalÃ­tica</button>
-  <button class="tab-btn" onclick="showTab('matches',this)">â½ Partidos</button>
-  <button class="tab-btn" onclick="showTab('rules',this)">ð Reglas</button>
+  <button class="tab-btn active" onclick="showTab('standings',this)">🏆 Clasificación</button>
+  <button class="tab-btn" onclick="showTab('charts',this)">📊 Analítica</button>
+  <button class="tab-btn" onclick="showTab('matches',this)">⚽ Partidos</button>
+  <button class="tab-btn" onclick="showTab('rules',this)">📋 Reglas</button>
 </nav>
 
 <main>
@@ -503,7 +154,7 @@ footer a{color:var(--accent2);text-decoration:none}
 <!-- STANDINGS -->
 <div id="tab-standings" class="tab-panel active">
   <div class="search-bar">
-    <input class="search-input" id="search" type="text" placeholder="ð Busca tu nombre para resaltarteâ¦" oninput="onSearch(this.value)">
+    <input class="search-input" id="search" type="text" placeholder="🔍 Busca tu nombre para resaltarte…" oninput="onSearch(this.value)">
     <span class="highlight-badge" id="hi-badge"></span>
     <span style="font-size:12px;color:var(--muted)" id="count-label"></span>
   </div>
@@ -511,7 +162,7 @@ footer a{color:var(--accent2);text-decoration:none}
   <div class="two-col">
     <div class="card">
       <div class="card-header">
-        <h3>ð Tabla completa</h3>
+        <h3>📋 Tabla completa</h3>
         <span style="font-size:11px;color:var(--muted)" id="podium-note"></span>
       </div>
       <div class="scroll-y">
@@ -519,7 +170,7 @@ footer a{color:var(--accent2);text-decoration:none}
           <thead>
             <tr>
               <th>#</th><th>Participante</th><th style="text-align:right">Pts</th>
-              <th>LÃ­der -</th><th>Barra</th>
+              <th>Líder -</th><th>Barra</th>
             </tr>
           </thead>
           <tbody id="standings-body"></tbody>
@@ -528,15 +179,15 @@ footer a{color:var(--accent2);text-decoration:none}
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
       <div class="card">
-        <div class="card-header"><h3>ð Top 5</h3></div>
+        <div class="card-header"><h3>🔝 Top 5</h3></div>
         <div class="card-body" id="top5"></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>ð Ãltimos 5</h3></div>
+        <div class="card-header"><h3>📉 Últimos 5</h3></div>
         <div class="card-body" id="bottom5"></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>ð¯ En el podio</h3><span style="font-size:10px;color:var(--muted)">Top 3 actuales</span></div>
+        <div class="card-header"><h3>🎯 En el podio</h3><span style="font-size:10px;color:var(--muted)">Top 3 actuales</span></div>
         <div class="card-body" id="podium-card"></div>
       </div>
     </div>
@@ -545,30 +196,30 @@ footer a{color:var(--accent2);text-decoration:none}
 
 <!-- CHARTS -->
 <div id="tab-charts" class="tab-panel">
-  <p class="section-title">DistribuciÃ³n del grupo</p>
+  <p class="section-title">Distribución del grupo</p>
   <div class="two-col" style="margin-bottom:18px">
     <div class="card">
-      <div class="card-header"><h3>ð Histograma de puntajes</h3></div>
+      <div class="card-header"><h3>📊 Histograma de puntajes</h3></div>
       <div class="card-body">
         <div class="chart-wrap" style="height:260px"><canvas id="histChart"></canvas></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><h3>ð Clustering del grupo</h3></div>
+      <div class="card-header"><h3>🍕 Clustering del grupo</h3></div>
       <div class="card-body">
         <div class="chart-wrap" style="height:260px"><canvas id="clusterChart"></canvas></div>
       </div>
     </div>
   </div>
   <div class="card" style="margin-bottom:18px">
-    <div class="card-header"><h3>ð Puntajes â todos los participantes</h3></div>
+    <div class="card-header"><h3>📊 Puntajes — todos los participantes</h3></div>
     <div class="card-body">
       <div class="chart-wrap" style="height:300px"><canvas id="allChart"></canvas></div>
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><h3>ð Carrera por la punta â Top 10 (proyectado)</h3>
-      <span style="font-size:10px;color:var(--muted)">DistribuciÃ³n proporcional sobre partidos jugados</span></div>
+    <div class="card-header"><h3>📈 Carrera por la punta — Top 10 (proyectado)</h3>
+      <span style="font-size:10px;color:var(--muted)">Distribución proporcional sobre partidos jugados</span></div>
     <div class="card-body">
       <div class="chart-wrap" style="height:300px"><canvas id="raceChart"></canvas></div>
     </div>
@@ -584,33 +235,33 @@ footer a{color:var(--accent2);text-decoration:none}
 
 <!-- RULES -->
 <div id="tab-rules" class="tab-panel">
-  <p class="section-title">PuntuaciÃ³n por partido</p>
+  <p class="section-title">Puntuación por partido</p>
   <div class="rules-grid" style="margin-bottom:22px">
     <div class="rule-item"><div class="rule-pts gold">4</div><div class="rule-desc"><strong>Marcador exacto</strong><span>Acertar el resultado completo</span></div></div>
-    <div class="rule-item"><div class="rule-pts blue">2</div><div class="rule-desc"><strong>SelecciÃ³n del ganador</strong><span>Acertar quiÃ©n gana o empate</span></div></div>
+    <div class="rule-item"><div class="rule-pts blue">2</div><div class="rule-desc"><strong>Selección del ganador</strong><span>Acertar quién gana o empate</span></div></div>
     <div class="rule-item"><div class="rule-pts green">1</div><div class="rule-desc"><strong>Goles de un equipo</strong><span>Acertar los goles de uno</span></div></div>
     <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">1</div><div class="rule-desc"><strong>Diferencia de goles</strong><span>Acertar la diferencia</span></div></div>
   </div>
   <p class="section-title">Predicciones del torneo</p>
   <div class="rules-grid" style="margin-bottom:22px">
-    <div class="rule-item"><div class="rule-pts gold">20</div><div class="rule-desc"><strong>CampeÃ³n</strong><span>El ganador del torneo</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:#c0c0c0">15</div><div class="rule-desc"><strong>SubcampeÃ³n</strong><span>El finalista perdedor</span></div></div>
+    <div class="rule-item"><div class="rule-pts gold">20</div><div class="rule-desc"><strong>Campeón</strong><span>El ganador del torneo</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:#c0c0c0">15</div><div class="rule-desc"><strong>Subcampeón</strong><span>El finalista perdedor</span></div></div>
     <div class="rule-item"><div class="rule-pts" style="color:#cd7f32">12</div><div class="rule-desc"><strong>Tercer puesto</strong><span>El ganador del tercer lugar</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>Goleador</strong><span>MÃ¡ximo anotador del torneo</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>MÃ¡ximo asistente</strong><span>Jugador con mÃ¡s asistencias</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>Goleador</strong><span>Máximo anotador del torneo</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>Máximo asistente</strong><span>Jugador con más asistencias</span></div></div>
     <div class="rule-item"><div class="rule-pts" style="color:var(--hi)">10</div><div class="rule-desc"><strong>Mejor portero</strong><span>El mejor arquero del torneo</span></div></div>
   </div>
-  <p class="section-title">InformaciÃ³n del grupo</p>
+  <p class="section-title">Información del grupo</p>
   <div class="rules-grid" id="group-info"></div>
 </div>
 
 </main>
 
 <footer>
-  â½ <strong>Polla Adictos</strong> â Copa Mundial FIFA 2026 Â·
-  Datos desde <a href="https://game.pollaya.com/mis-grupos/84178/posiciones" target="_blank">Pollaya</a> Â·
-  Actualizado automÃ¡ticamente cada 30 min Â·
-  <a href="https://github.com/franciscobaquerovergara/polla-adictos" target="_blank">CÃ³digo fuente</a>
+  ⚽ <strong>Polla Adictos</strong> — Copa Mundial FIFA 2026 ·
+  Datos desde <a href="https://game.pollaya.com/mis-grupos/84178/posiciones" target="_blank">Pollaya</a> ·
+  Actualizado automáticamente cada 30 min ·
+  <a href="https://github.com/franciscobaquerovergara/polla-adictos" target="_blank">Código fuente</a>
 </footer>
 
 <script>
@@ -618,9 +269,9 @@ let DATA = null;
 let chartInstances = {};
 let chartsBuilt = false;
 
-// ââ Load data ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Load data ──────────────────────────────────────────────
 async function loadData() {
-  document.getElementById('refresh-btn').textContent = 'â¦';
+  document.getElementById('refresh-btn').textContent = '…';
   try {
     const r = await fetch('./data.json?t=' + Date.now());
     DATA = await r.json();
@@ -629,10 +280,10 @@ async function loadData() {
     console.error(e);
     alert('No se pudo cargar data.json');
   }
-  document.getElementById('refresh-btn').textContent = 'â» Actualizar';
+  document.getElementById('refresh-btn').textContent = '↻ Actualizar';
 }
 
-// ââ Render all âââââââââââââââââââââââââââââââââââââââââââââ
+// ── Render all ─────────────────────────────────────────────
 function render() {
   const { standings, group, matchesPlayed, matchesPlayed_count, totalMatches, lastUpdated } = DATA;
   const leader = standings[0];
@@ -641,7 +292,7 @@ function render() {
 
   // Header
   document.getElementById('header-sub').textContent =
-    `${group.tournament} Â· ${group.participants} participantes Â· ${group.name}`;
+    `${group.tournament} · ${group.participants} participantes · ${group.name}`;
   const lu = new Date(lastUpdated);
   document.getElementById('last-updated').textContent =
     'Actualizado: ' + lu.toLocaleString('es-CO', {dateStyle:'short',timeStyle:'short'});
@@ -649,27 +300,27 @@ function render() {
   // Hero
   document.getElementById('hero-stats').innerHTML = `
     <div class="stat-card leader-card">
-      <span class="stat-label">ð¥ LÃ­der actual</span>
+      <span class="stat-label">🥇 Líder actual</span>
       <span class="stat-value gold">${leader.pts}</span>
       <span class="stat-sub">${leader.name}</span>
     </div>
     <div class="stat-card">
-      <span class="stat-label">ð¥ Participantes</span>
+      <span class="stat-label">👥 Participantes</span>
       <span class="stat-value blue">${group.participants}</span>
       <span class="stat-sub">${group.name}</span>
     </div>
     <div class="stat-card">
-      <span class="stat-label">â½ Partidos jugados</span>
+      <span class="stat-label">⚽ Partidos jugados</span>
       <span class="stat-value green">${matchesPlayed_count}</span>
       <span class="stat-sub">de ${totalMatches} en el torneo</span>
     </div>
     <div class="stat-card">
-      <span class="stat-label">ð Promedio</span>
+      <span class="stat-label">📊 Promedio</span>
       <span class="stat-value">${avg}</span>
       <span class="stat-sub">Mediana: ${median} pts</span>
     </div>
     <div class="stat-card">
-      <span class="stat-label">ð Avance del torneo</span>
+      <span class="stat-label">🏁 Avance del torneo</span>
       <span class="stat-value" style="color:var(--accent2)">${Math.round(matchesPlayed_count/totalMatches*100)}%</span>
       <span class="stat-sub">${totalMatches - matchesPlayed_count} partidos restantes</span>
     </div>
@@ -686,7 +337,7 @@ function render() {
   // Podium card
   document.getElementById('podium-card').innerHTML = standings.slice(0,3).map((p,i) => `
     <div class="mini-list-item">
-      <span class="mini-pos">${['ð¥','ð¥','ð¥'][i]}</span>
+      <span class="mini-pos">${['🥇','🥈','🥉'][i]}</span>
       <span class="mini-name">${p.name}</span>
       <span class="mini-pts ${i===0?'gold':''}">${p.pts}</span>
     </div>
@@ -695,19 +346,19 @@ function render() {
 
   // Matches
   document.getElementById('match-stats').innerHTML = `
-    <div class="stat-card"><span class="stat-label">â Jugados</span><span class="stat-value green">${matchesPlayed_count}</span></div>
-    <div class="stat-card"><span class="stat-label">â³ Pendientes</span><span class="stat-value blue">${totalMatches - matchesPlayed_count}</span></div>
-    <div class="stat-card"><span class="stat-label">â½ Goles totales</span><span class="stat-value gold">${matchesPlayed.reduce((s,m)=>s+m.hg+m.ag,0)}</span></div>
-    <div class="stat-card"><span class="stat-label">ð¯ Promedio goles</span><span class="stat-value">${(matchesPlayed.reduce((s,m)=>s+m.hg+m.ag,0)/matchesPlayed.length).toFixed(1)}</span><span class="stat-sub">por partido</span></div>
+    <div class="stat-card"><span class="stat-label">✅ Jugados</span><span class="stat-value green">${matchesPlayed_count}</span></div>
+    <div class="stat-card"><span class="stat-label">⏳ Pendientes</span><span class="stat-value blue">${totalMatches - matchesPlayed_count}</span></div>
+    <div class="stat-card"><span class="stat-label">⚽ Goles totales</span><span class="stat-value gold">${matchesPlayed.reduce((s,m)=>s+m.hg+m.ag,0)}</span></div>
+    <div class="stat-card"><span class="stat-label">🎯 Promedio goles</span><span class="stat-value">${(matchesPlayed.reduce((s,m)=>s+m.hg+m.ag,0)/matchesPlayed.length).toFixed(1)}</span><span class="stat-sub">por partido</span></div>
   `;
   document.getElementById('matches-list').innerHTML = [...matchesPlayed].reverse().map(m => matchCard(m)).join('');
 
   // Group info
   document.getElementById('group-info').innerHTML = `
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">ð¤</div><div class="rule-desc"><strong>Administrador</strong><span>${group.admin}</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">â°</div><div class="rule-desc"><strong>Cierre pronÃ³sticos</strong><span>15 min antes de cada partido</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">ð</div><div class="rule-desc"><strong>Marcadores ocultos</strong><span>No visibles antes del partido</span></div></div>
-    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">ð¤</div><div class="rule-desc"><strong>Desempate</strong><span>Los integrantes deciden</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">👤</div><div class="rule-desc"><strong>Administrador</strong><span>${group.admin}</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">⏰</div><div class="rule-desc"><strong>Cierre pronósticos</strong><span>15 min antes de cada partido</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">🔒</div><div class="rule-desc"><strong>Marcadores ocultos</strong><span>No visibles antes del partido</span></div></div>
+    <div class="rule-item"><div class="rule-pts" style="color:var(--muted)">🤝</div><div class="rule-desc"><strong>Desempate</strong><span>Los integrantes deciden</span></div></div>
   `;
 
   // Hide loader
@@ -717,7 +368,7 @@ function render() {
   if (chartsBuilt) rebuildCharts();
 }
 
-// ââ Table rendering ââââââââââââââââââââââââââââââââââââââââ
+// ── Table rendering ────────────────────────────────────────
 function renderTable(list, query) {
   const leader = DATA.standings[0].pts;
   document.getElementById('standings-body').innerHTML = list.map(p => {
@@ -730,7 +381,7 @@ function renderTable(list, query) {
     else if (p.pos===3) badge = `<span class="pos-badge p3">3</span>`;
     else if (isHi) badge = `<span class="pos-badge ph">${p.pos}</span>`;
     let gapChip = `<span class="gap-chip">-${gap}</span>`;
-    if (gap===0) gapChip = `<span class="gap-chip lead">LÃ­der</span>`;
+    if (gap===0) gapChip = `<span class="gap-chip lead">Líder</span>`;
     else if (gap<=5) gapChip = `<span class="gap-chip close">-${gap}</span>`;
     const barClass = p.pos===1?'top':isHi?'hi':'';
     return `<tr class="${isHi?'highlighted':''}">
@@ -746,7 +397,7 @@ function renderTable(list, query) {
 function miniRow(p, leaderPts) {
   const gap = leaderPts - p.pts;
   return `<div class="mini-list-item">
-    <span class="mini-pos">${p.pos}Â°</span>
+    <span class="mini-pos">${p.pos}°</span>
     <span class="mini-name">${p.name}</span>
     <span class="mini-pts ${p.pos===1?'gold':''}">${p.pts}</span>
   </div>`;
@@ -755,13 +406,13 @@ function miniRow(p, leaderPts) {
 function matchCard(m) {
   const winner = m.hg>m.ag?'home':m.hg<m.ag?'away':'draw';
   return `<div class="match-card">
-    <div class="match-meta">Grupo ${m.group} Â· ${m.date}</div>
+    <div class="match-meta">Grupo ${m.group} · ${m.date}</div>
     <div class="match-teams">
       <div class="team">
         <div class="team-code" style="${winner==='home'?'color:var(--green)':''}">${m.home}</div>
         <div class="team-score">${m.hg}</div>
       </div>
-      <div class="vs-sep">â</div>
+      <div class="vs-sep">—</div>
       <div class="team">
         <div class="team-score">${m.ag}</div>
         <div class="team-code" style="${winner==='away'?'color:var(--green)':''}">${m.away}</div>
@@ -771,7 +422,7 @@ function matchCard(m) {
   </div>`;
 }
 
-// ââ Search âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Search ─────────────────────────────────────────────────
 function onSearch(q) {
   const badge = document.getElementById('hi-badge');
   if (!DATA) return;
@@ -779,7 +430,7 @@ function onSearch(q) {
   if (q.trim()) {
     const match = DATA.standings.find(p => p.name.toLowerCase().includes(q.toLowerCase()));
     if (match) {
-      badge.textContent = `${match.name} â ${match.pos}Â° lugar Â· ${match.pts} pts`;
+      badge.textContent = `${match.name} — ${match.pos}° lugar · ${match.pts} pts`;
       badge.style.display = 'inline-block';
       // scroll to highlighted row
       setTimeout(() => {
@@ -794,7 +445,7 @@ function onSearch(q) {
   }
 }
 
-// ââ Tabs âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Tabs ───────────────────────────────────────────────────
 function showTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -803,7 +454,7 @@ function showTab(name, btn) {
   if (name==='charts' && DATA && !chartsBuilt) { buildCharts(); chartsBuilt=true; }
 }
 
-// ââ Charts âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Charts ─────────────────────────────────────────────────
 const palette = ['#e8c24a','#4a90e8','#3dd68c','#e85a5a','#c07af0','#f09a3a','#5abbe8','#e8a0c2','#7ac0f0','#b0e8a0'];
 const chartOpts = {
   responsive:true, maintainAspectRatio:false,
@@ -835,7 +486,7 @@ function buildCharts() {
   });
 
   // Cluster donut
-  const zones={'Ãlite (35+)':st.filter(p=>p.pts>=35).length,'Alto (25-34)':st.filter(p=>p.pts>=25&&p.pts<35).length,'Medio (15-24)':st.filter(p=>p.pts>=15&&p.pts<25).length,'Cola (<15)':st.filter(p=>p.pts<15).length};
+  const zones={'Élite (35+)':st.filter(p=>p.pts>=35).length,'Alto (25-34)':st.filter(p=>p.pts>=25&&p.pts<35).length,'Medio (15-24)':st.filter(p=>p.pts>=15&&p.pts<25).length,'Cola (<15)':st.filter(p=>p.pts<15).length};
   destroyChart('cluster');
   chartInstances.cluster = new Chart(document.getElementById('clusterChart'),{
     type:'doughnut',
@@ -885,7 +536,7 @@ function rebuildCharts() {
   buildCharts();
 }
 
-// ââ Boot âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Boot ───────────────────────────────────────────────────
 loadData();
 </script>
 </body>
