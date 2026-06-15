@@ -2,8 +2,11 @@ name: Update Polla Data
 
 on:
   schedule:
-    # Every 30 minutes between 6am and midnight UTC (11pm-7am Colombia)
-    - cron: '*/30 9-5 * * *'
+    # Every 5 min during Copa Mundial match windows (16:00-03:00 UTC = 11am-10pm Colombia)
+    - cron: '*/5 16-23 * * *'
+    - cron: '*/5 0-3 * * *'
+    # Every 30 min outside match hours
+    - cron: '*/30 4-15 * * *'
   workflow_dispatch:   # Allow manual trigger from Actions tab
 
 permissions:
