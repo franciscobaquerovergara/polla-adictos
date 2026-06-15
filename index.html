@@ -33,13 +33,11 @@ main{padding:20px 28px;max-width:1400px;margin:0 auto}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
 
-/* Search bar */
 .search-bar{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
 .search-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 14px;font-size:13px;width:220px;outline:none}
 .search-input:focus{border-color:var(--accent2)}
 .highlight-badge{background:var(--hi);color:#111;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;display:none}
 
-/* Hero stats */
 .hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 16px;display:flex;flex-direction:column;gap:5px}
 .stat-card.leader-card{border-color:var(--accent)}
@@ -50,15 +48,15 @@ main{padding:20px 28px;max-width:1400px;margin:0 auto}
 .blue{color:var(--accent2)}
 .green{color:var(--green)}
 
-/* Layout */
 .two-col{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
 @media(max-width:880px){.two-col{grid-template-columns:1fr}}
+.two-col-equal{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:880px){.two-col-equal{grid-template-columns:1fr}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .card-header h3{font-size:13px;font-weight:700}
 .card-body{padding:14px 18px}
 
-/* Standings */
 .standings-table{width:100%;border-collapse:collapse}
 .standings-table th{text-align:left;padding:9px 10px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0}
 .standings-table td{padding:9px 10px;font-size:13px;border-bottom:1px solid #1e2238;transition:.15s}
@@ -79,14 +77,12 @@ main{padding:20px 28px;max-width:1400px;margin:0 auto}
 .gap-chip.close{background:#3dd68c22;color:var(--green)}
 .scroll-y{overflow-y:auto;max-height:520px}
 
-/* Mini list */
 .mini-list-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
 .mini-list-item:last-child{border:none}
 .mini-pos{font-size:11px;color:var(--muted);min-width:22px}
 .mini-name{font-size:13px;flex:1;padding:0 8px}
 .mini-pts{font-size:14px;font-weight:800}
 
-/* Matches */
 .matches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .match-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px}
 .match-meta{font-size:10px;color:var(--muted);margin-bottom:7px}
@@ -98,19 +94,16 @@ main{padding:20px 28px;max-width:1400px;margin:0 auto}
 .ft-badge{display:inline-block;margin-top:5px;font-size:9px;padding:1px 7px;border-radius:7px;font-weight:700}
 .ft-done{background:#3dd68c22;color:var(--green)}
 
-/* Rules */
 .rules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
 .rule-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px}
 .rule-pts{font-size:20px;font-weight:900;min-width:32px;text-align:center}
 .rule-desc strong{display:block;font-size:12px;color:var(--text);margin-bottom:2px}
 .rule-desc span{font-size:11px;color:var(--muted)}
 
-/* Charts */
 .chart-wrap{position:relative}
 .section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;margin-top:20px;display:flex;align-items:center;gap:8px}
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* Loading */
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;transition:opacity .4s}
 #loading.hidden{opacity:0;pointer-events:none}
 .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
@@ -217,11 +210,42 @@ footer a{color:var(--accent2);text-decoration:none}
       <div class="chart-wrap" style="height:300px"><canvas id="allChart"></canvas></div>
     </div>
   </div>
-  <div class="card">
+  <div class="card" style="margin-bottom:24px">
     <div class="card-header"><h3>📈 Carrera por la punta — Top 10 (proyectado)</h3>
       <span style="font-size:10px;color:var(--muted)">Distribución proporcional sobre partidos jugados</span></div>
     <div class="card-body">
       <div class="chart-wrap" style="height:300px"><canvas id="raceChart"></canvas></div>
+    </div>
+  </div>
+
+  <p class="section-title">Porcentaje de acierto</p>
+  <div id="accuracy-pending" class="card" style="display:none">
+    <div class="card-body" style="text-align:center;padding:32px;color:var(--muted)">
+      <p style="font-size:28px;margin-bottom:10px">⏳</p>
+      <p style="font-size:14px;font-weight:600;color:var(--text)">Datos de acierto en proceso</p>
+      <p style="font-size:12px;margin-top:8px">Los porcentajes se calculan visitando el pronóstico individual de cada participante.<br>Estarán disponibles en la próxima actualización automática.</p>
+    </div>
+  </div>
+  <div id="accuracy-charts-container" style="display:none">
+    <div class="two-col-equal">
+      <div class="card">
+        <div class="card-header">
+          <h3>🎯 % Marcador exacto</h3>
+          <span style="font-size:10px;color:var(--muted)">Ordenado por mayor acierto</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap" id="exactWrap" style="height:480px"><canvas id="exactChart"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>✅ % Ganador correcto</h3>
+          <span style="font-size:10px;color:var(--muted)">Local / Visitante / Empate</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap" id="winnerWrap" style="height:480px"><canvas id="winnerChart"></canvas></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -395,7 +419,6 @@ function renderTable(list, query) {
 }
 
 function miniRow(p, leaderPts) {
-  const gap = leaderPts - p.pts;
   return `<div class="mini-list-item">
     <span class="mini-pos">${p.pos}°</span>
     <span class="mini-name">${p.name}</span>
@@ -432,7 +455,6 @@ function onSearch(q) {
     if (match) {
       badge.textContent = `${match.name} — ${match.pos}° lugar · ${match.pts} pts`;
       badge.style.display = 'inline-block';
-      // scroll to highlighted row
       setTimeout(() => {
         const row = document.querySelector('#standings-body tr.highlighted');
         if (row) row.scrollIntoView({behavior:'smooth', block:'center'});
@@ -469,7 +491,6 @@ function destroyChart(id) {
 function buildCharts() {
   if (!DATA) return;
   const st = DATA.standings;
-  const leader = st[0].pts;
 
   // Histogram
   const bins = [{l:'1-9',c:0},{l:'10-14',c:0},{l:'15-19',c:0},{l:'20-24',c:0},{l:'25-29',c:0},{l:'30-34',c:0},{l:'35-39',c:0},{l:'40+',c:0}];
@@ -528,6 +549,53 @@ function buildCharts() {
     }))},
     options:{...chartOpts,plugins:{legend:{display:true,position:'right',labels:{color:'#7b82a0',font:{size:10},boxWidth:10}}}}
   });
+
+  // Accuracy charts
+  const acc = DATA.accuracyStats || [];
+  const accContainer = document.getElementById('accuracy-charts-container');
+  const accPending = document.getElementById('accuracy-pending');
+  if (acc.length > 0) {
+    accContainer.style.display = '';
+    accPending.style.display = 'none';
+    const rowH = Math.max(300, acc.length * 20);
+    document.getElementById('exactWrap').style.height = rowH + 'px';
+    document.getElementById('winnerWrap').style.height = rowH + 'px';
+    const shortName = n => n.split(' ').slice(0,2).join(' ');
+    const hbarOpts = () => ({
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.parsed.x.toFixed(1)}%` } }
+      },
+      scales: {
+        x: { min:0, max:100, ticks:{color:'#7b82a0',font:{size:10},callback:v=>v+'%'}, grid:{color:'#2e3352'} },
+        y: { ticks:{color:'#7b82a0',font:{size:10}}, grid:{display:false} }
+      }
+    });
+    const sortedExact = [...acc].sort((a,b) => b.exactPct - a.exactPct);
+    destroyChart('exact');
+    chartInstances.exact = new Chart(document.getElementById('exactChart'), {
+      type: 'bar',
+      data: {
+        labels: sortedExact.map(p => shortName(p.name)),
+        datasets: [{ data: sortedExact.map(p => p.exactPct), backgroundColor: sortedExact.map((_,i) => i===0?'#e8c24a':i<=2?'#4a90e8':'#2e3352'), borderRadius:3, borderSkipped:false }]
+      },
+      options: hbarOpts()
+    });
+    const sortedWinner = [...acc].sort((a,b) => b.winnerPct - a.winnerPct);
+    destroyChart('winner');
+    chartInstances.winner = new Chart(document.getElementById('winnerChart'), {
+      type: 'bar',
+      data: {
+        labels: sortedWinner.map(p => shortName(p.name)),
+        datasets: [{ data: sortedWinner.map(p => p.winnerPct), backgroundColor: sortedWinner.map((_,i) => i===0?'#3dd68c':i<=2?'#4a90e8':'#2e3352'), borderRadius:3, borderSkipped:false }]
+      },
+      options: hbarOpts()
+    });
+  } else {
+    accContainer.style.display = 'none';
+    accPending.style.display = '';
+  }
 }
 
 function rebuildCharts() {
