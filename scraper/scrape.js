@@ -82,7 +82,14 @@ async function main() {
     // Standings
     console.log('Scraping standings...');
     await page.goto(BASE_URL + '/mis-grupos/' + GROUP_ID + '/posiciones', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.t-pts', { timeout: 45000 });
+    const gotStandings = await page.waitForSelector('.t-pts', { state: 'attached', timeout: 45000 }).catch(() => null);
+    if (!gotStandings) {
+      try {
+        const sd = await page.evaluate(() => ({ loc: location.href, title: document.title, tpts: document.querySelectorAll('.t-pts').length, body: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 250) }));
+        console.error('STANDINGS-DIAG ' + JSON.stringify(sd));
+      } catch (e) {}
+      throw new Error('Standings not found');
+    }
 
     let more = true, attempts = 0;
     while (more && attempts < 12) {
