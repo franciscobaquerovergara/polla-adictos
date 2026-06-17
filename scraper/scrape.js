@@ -6,42 +6,53 @@ const GROUP_ID = 84178;
 const BASE_URL = 'https://game.pollaya.com';
 // Per-participant accuracy scraping is disabled: Pollaya no longer shows each
 // user's pick for already-played matches inline, so it can't be computed
-// reliably and only slowed the run down. Flip to true if that changes.
+// reliably. Flip to true if that changes.
 const SCRAPE_ACCURACY = false;
 
 async function main() {
   console.log('Starting Pollaya scraper...');
   const browser = await chromium.launch({ headless: true });
-  const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' });
+  const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', locale: 'es-CO' });
   const page = await ctx.newPage();
   page.setDefaultTimeout(45000);
 
   try {
-    // Login
     console.log('Logging in...');
-    await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle').catch(() => {});
-
-    // Dismiss any cookie/consent overlay that could hide the form.
-    for (const sel of ['button:has-text("Aceptar")', 'button:has-text("Accept")', 'button:has-text("De acuerdo")', 'button:has-text("Entendido")', '#onetrust-accept-btn-handler']) {
-      const b = await page.$(sel).catch(() => null);
-      if (b) { await b.click().catch(() => {}); await page.waitForTimeout(400); }
-    }
-
-    // Wait for the password field to exist in the DOM (state attached, not
-    // necessarily visible). The login form is JS-rendered and slow under CI.
     const emailSelector = 'input[type="email"], input[name="email"], input[placeholder*="mail" i], input[placeholder*="correo" i]';
-    const passField = await page.waitForSelector('input[type="password"]', { state: 'attached', timeout: 60000 }).catch(() => null);
+    const findPass = (ms) => page.waitForSelector('input[type="password"]', { state: 'attached', timeout: ms }).catch(() => null);
+
+    // On a cold/headless session, /login can bounce to the marketing home page,
+    // where the form is opened from a sign-in entry point. Try the direct page,
+    // then click a sign-in link, then try the home page the same way.
+    let passField = null;
+    for (const url of [BASE_URL + '/login', BASE_URL + '/']) {
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle').catch(() => {});
+      passField = await findPass(8000);
+      if (passField) break;
+
+      const loginTexts = ['Iniciar sesión', 'Iniciar sesion', 'Inicia sesión', 'Ingresar', 'Ingreso', 'Entrar', 'Acceder', 'Mi cuenta', 'Log in', 'Login', 'Sign in', 'Sign In'];
+      for (const txt of loginTexts) {
+        const el = await page.$('a:has-text("' + txt + '"), button:has-text("' + txt + '")').catch(() => null);
+        if (el) { await el.click().catch(() => {}); await page.waitForTimeout(1500); }
+        passField = await findPass(1500);
+        if (passField) break;
+      }
+      if (passField) break;
+    }
+    if (!passField) passField = await findPass(20000);
 
     if (!passField) {
-      // Self-diagnose: log exactly what the headless page shows so we can fix it.
       try {
         const diag = await page.evaluate(() => ({
-          url: location.href,
+          loc: location.href,
           title: document.title,
-          inputs: [...document.querySelectorAll('input')].map(i => i.type + '|' + (i.name || '') + '|' + (i.placeholder || '')),
-          frames: [...document.querySelectorAll('iframe')].map(f => f.src).slice(0, 5),
-          body: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 600)
+          inputs: [...document.querySelectorAll('input')].map(i => i.type),
+          links: [...document.querySelectorAll('a,button')]
+            .map(e => (e.textContent || '').trim().slice(0, 30) + '@' + (e.getAttribute('href') || ''))
+            .filter(x => /ingres|inici|entrar|acced|cuenta|log|sign|sesi/i.test(x))
+            .slice(0, 14),
+          body: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 300)
         }));
         console.error('LOGIN-DIAG ' + JSON.stringify(diag));
       } catch (e) { console.error('diag failed', e.message); }
@@ -55,18 +66,15 @@ async function main() {
     await passField.fill(process.env.POLLAYA_PASSWORD || '');
     await passField.press('Enter');
 
-    // Wait until we've left the login page (successful auth redirects away).
     await page.waitForURL(u => !String(u).includes('/login'), { timeout: 20000 }).catch(() => {});
     await page.waitForLoadState('domcontentloaded').catch(() => {});
     console.log('Logged in, at:', page.url());
-    if (page.url().includes('/login')) throw new Error('Login did not redirect - check credentials/secrets');
 
     // Standings + participant links
     console.log('Scraping standings...');
-    await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/posiciones`, { waitUntil: 'domcontentloaded' });
+    await page.goto(BASE_URL + '/mis-grupos/' + GROUP_ID + '/posiciones', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.t-pts', { timeout: 45000 });
 
-    // Load all players
     let more = true, attempts = 0;
     while (more && attempts < 12) {
       const btn = await page.$('button:has-text("Ver más usuarios")');
@@ -74,33 +82,32 @@ async function main() {
       else more = false;
     }
 
-    const { standings, participantLinks } = await page.evaluate((base) => {
+    const result = await page.evaluate((base) => {
       const items = [...document.querySelectorAll('.t-pts')];
       const standings = items.map(item => {
         const posEl = item.querySelector('.rank-position');
         const nameEl = item.querySelector('.name span');
         const scoreEl = item.querySelector('.score-points b');
-        const pos = parseInt((posEl?.textContent || '').replace(/\D/g, ''));
-        const name = nameEl?.textContent.trim();
-        const pts = parseInt((scoreEl?.textContent || '').trim());
+        const pos = parseInt((posEl && posEl.textContent || '').replace(/\D/g, ''));
+        const name = nameEl && nameEl.textContent.trim();
+        const pts = parseInt((scoreEl && scoreEl.textContent || '').trim());
         return (name && !isNaN(pts) && !isNaN(pos)) ? { pos, name, pts } : null;
       }).filter(Boolean).sort((a, b) => a.pos - b.pos);
-
       const participantLinks = items.map(item => {
         const nameEl = item.querySelector('.name span');
         const link = item.querySelector('a');
-        const href = link?.getAttribute('href');
+        const href = link && link.getAttribute('href');
         if (!nameEl || !href) return null;
         return { name: nameEl.textContent.trim(), href: href.startsWith('http') ? href : base + href };
       }).filter(Boolean);
-
       return { standings, participantLinks };
     }, BASE_URL);
+    const standings = result.standings, participantLinks = result.participantLinks;
     console.log('Got ' + standings.length + ' players, ' + participantLinks.length + ' profile links');
 
     // Match results
     console.log('Scraping match results...');
-    await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/pronosticos`, { waitUntil: 'domcontentloaded' });
+    await page.goto(BASE_URL + '/mis-grupos/' + GROUP_ID + '/pronosticos', { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.body.textContent.includes('Comparar'), { timeout: 45000 });
     await page.waitForTimeout(1500);
 
@@ -108,7 +115,6 @@ async function main() {
     const matchesPlayed = parseMatches(rawText);
     console.log('Got ' + matchesPlayed.length + ' completed matches');
 
-    // Per-participant predictions & accuracy (optional)
     let accuracyStats = [];
     if (SCRAPE_ACCURACY && participantLinks.length > 0 && matchesPlayed.length > 0) {
       for (const p of participantLinks) {
@@ -120,7 +126,7 @@ async function main() {
           const preds = parseUserPredictions(text);
           if (preds.length > 0) {
             const stats = computeAccuracy(preds, matchesPlayed);
-            if (stats) accuracyStats.push({ name: p.name, ...stats });
+            if (stats) accuracyStats.push(Object.assign({ name: p.name }, stats));
           }
         } catch (e) { /* best-effort */ }
       }
@@ -128,10 +134,9 @@ async function main() {
 
     await browser.close();
 
-    // Build data.json
     const dataPath = path.join(__dirname, '..', 'data.json');
     let existing = {};
-    try { existing = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch {}
+    try { existing = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch (e) {}
 
     // Never wipe good data with an empty scrape - keep previous values instead.
     const safeStandings = standings.length > 0 ? standings : (existing.standings || []);
@@ -156,19 +161,16 @@ async function main() {
       await page.screenshot({ path: path.join(__dirname, '..', 'debug.png'), fullPage: true });
       fs.writeFileSync(path.join(__dirname, '..', 'debug.html'), await page.content());
       console.error('Saved debug.png / debug.html');
-    } catch {}
+    } catch (e) {}
     await browser.close().catch(() => {});
     throw err;
   }
 }
 
-// Parsers
-
 function parseMatches(text) {
-  // Current Pollaya layout for a played/locked match (concatenated textContent):
-  //   "vie. 12 jun. 03:00 MEX(2)(0)CompararRSA"
-  // The two parenthesised numbers are the REAL match score (home)(away).
-  // Upcoming matches render editable inputs (no parentheses), so they are skipped.
+  // Played/locked match in concatenated textContent: "vie. 12 jun. 03:00 MEX(2)(0)CompararRSA"
+  // The two parenthesised numbers are the REAL score (home)(away). Upcoming
+  // matches render editable inputs (no parentheses) so they are skipped.
   const matches = [];
   const seen = new Set();
   const days = { 'vie': 'Vie', 'sáb': 'Sáb', 'dom': 'Dom', 'lun': 'Lun', 'mar': 'Mar', 'mié': 'Mié', 'jue': 'Jue' };
