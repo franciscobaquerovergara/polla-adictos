@@ -10,27 +10,46 @@ const BASE_URL = 'https://game.pollaya.com';
 const SCRAPE_ACCURACY = false;
 
 async function main() {
-  console.log('🚀 Starting Pollaya scraper...');
+  console.log('Starting Pollaya scraper...');
   const browser = await chromium.launch({ headless: true });
-  const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' });
+  const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' });
   const page = await ctx.newPage();
   page.setDefaultTimeout(45000);
 
   try {
-    // ── Login ──────────────────────────────────────────────
-    console.log('🔐 Logging in...');
+    // Login
+    console.log('Logging in...');
     await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle').catch(() => {});
 
-    // The login form is rendered by JS and can take several seconds on a cold
-    // load (heavy ads). Wait for the fields instead of a fixed sleep — this was
-    // the root cause of the "Login fields not found" failures.
-    await page.waitForSelector('input[type="password"]', { timeout: 45000 });
+    // Dismiss any cookie/consent overlay that could hide the form.
+    for (const sel of ['button:has-text("Aceptar")', 'button:has-text("Accept")', 'button:has-text("De acuerdo")', 'button:has-text("Entendido")', '#onetrust-accept-btn-handler']) {
+      const b = await page.$(sel).catch(() => null);
+      if (b) { await b.click().catch(() => {}); await page.waitForTimeout(400); }
+    }
+
+    // Wait for the password field to exist in the DOM (state attached, not
+    // necessarily visible). The login form is JS-rendered and slow under CI.
     const emailSelector = 'input[type="email"], input[name="email"], input[placeholder*="mail" i], input[placeholder*="correo" i]';
-    await page.waitForSelector(emailSelector, { timeout: 15000 });
+    const passField = await page.waitForSelector('input[type="password"]', { state: 'attached', timeout: 60000 }).catch(() => null);
+
+    if (!passField) {
+      // Self-diagnose: log exactly what the headless page shows so we can fix it.
+      try {
+        const diag = await page.evaluate(() => ({
+          url: location.href,
+          title: document.title,
+          inputs: [...document.querySelectorAll('input')].map(i => i.type + '|' + (i.name || '') + '|' + (i.placeholder || '')),
+          frames: [...document.querySelectorAll('iframe')].map(f => f.src).slice(0, 5),
+          body: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 600)
+        }));
+        console.error('LOGIN-DIAG ' + JSON.stringify(diag));
+      } catch (e) { console.error('diag failed', e.message); }
+      throw new Error('Login fields not found');
+    }
 
     const emailField = await page.$(emailSelector);
-    const passField = await page.$('input[type="password"]');
-    if (!emailField || !passField) throw new Error('Login fields not found');
+    if (!emailField) throw new Error('Email field not found');
 
     await emailField.fill(process.env.POLLAYA_EMAIL || '');
     await passField.fill(process.env.POLLAYA_PASSWORD || '');
@@ -39,11 +58,11 @@ async function main() {
     // Wait until we've left the login page (successful auth redirects away).
     await page.waitForURL(u => !String(u).includes('/login'), { timeout: 20000 }).catch(() => {});
     await page.waitForLoadState('domcontentloaded').catch(() => {});
-    console.log('✅ Logged in, at:', page.url());
-    if (page.url().includes('/login')) throw new Error('Login did not redirect — check credentials/secrets');
+    console.log('Logged in, at:', page.url());
+    if (page.url().includes('/login')) throw new Error('Login did not redirect - check credentials/secrets');
 
-    // ── Standings + participant links ──────────────────────
-    console.log('📊 Scraping standings...');
+    // Standings + participant links
+    console.log('Scraping standings...');
     await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/posiciones`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.t-pts', { timeout: 45000 });
 
@@ -77,23 +96,21 @@ async function main() {
 
       return { standings, participantLinks };
     }, BASE_URL);
-    console.log(`✅ Got ${standings.length} players, ${participantLinks.length} profile links`);
+    console.log('Got ' + standings.length + ' players, ' + participantLinks.length + ' profile links');
 
-    // ── Match results ──────────────────────────────────────
-    console.log('⚽ Scraping match results...');
+    // Match results
+    console.log('Scraping match results...');
     await page.goto(`${BASE_URL}/mis-grupos/${GROUP_ID}/pronosticos`, { waitUntil: 'domcontentloaded' });
-    // Wait until the prediction cards (each has a "Comparar" link) are present.
     await page.waitForFunction(() => document.body.textContent.includes('Comparar'), { timeout: 45000 });
     await page.waitForTimeout(1500);
 
     const rawText = await page.evaluate(() => document.body.textContent);
     const matchesPlayed = parseMatches(rawText);
-    console.log(`✅ Got ${matchesPlayed.length} completed matches`);
+    console.log('Got ' + matchesPlayed.length + ' completed matches');
 
-    // ── Per-participant predictions & accuracy (optional) ──
+    // Per-participant predictions & accuracy (optional)
     let accuracyStats = [];
     if (SCRAPE_ACCURACY && participantLinks.length > 0 && matchesPlayed.length > 0) {
-      console.log(`🎯 Scraping predictions for ${participantLinks.length} participants...`);
       for (const p of participantLinks) {
         try {
           const predUrl = p.href.includes('pronosticos') ? p.href : p.href.replace(/\/$/, '') + '/pronosticos';
@@ -105,21 +122,18 @@ async function main() {
             const stats = computeAccuracy(preds, matchesPlayed);
             if (stats) accuracyStats.push({ name: p.name, ...stats });
           }
-        } catch (e) {
-          console.warn(`⚠️  Skipped ${p.name}: ${e.message}`);
-        }
+        } catch (e) { /* best-effort */ }
       }
-      console.log(`✅ Accuracy stats for ${accuracyStats.length}/${participantLinks.length} participants`);
     }
 
     await browser.close();
 
-    // ── Build data.json ────────────────────────────────────
+    // Build data.json
     const dataPath = path.join(__dirname, '..', 'data.json');
     let existing = {};
     try { existing = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch {}
 
-    // Never wipe good data with an empty scrape — keep previous values instead.
+    // Never wipe good data with an empty scrape - keep previous values instead.
     const safeStandings = standings.length > 0 ? standings : (existing.standings || []);
     const safeMatches = matchesPlayed.length > 0 ? matchesPlayed : (existing.matchesPlayed || []);
 
@@ -136,43 +150,37 @@ async function main() {
     data.group.participants = safeStandings.length || data.group.participants;
 
     fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-    console.log('💾 data.json updated!');
+    console.log('data.json updated!');
   } catch (err) {
-    // Save a screenshot + HTML so failures are diagnosable from the Actions artifacts.
     try {
       await page.screenshot({ path: path.join(__dirname, '..', 'debug.png'), fullPage: true });
       fs.writeFileSync(path.join(__dirname, '..', 'debug.html'), await page.content());
-      console.error('🖼️  Saved debug.png / debug.html');
+      console.error('Saved debug.png / debug.html');
     } catch {}
     await browser.close().catch(() => {});
     throw err;
   }
 }
 
-// ── Parsers ────────────────────────────────────────────────
+// Parsers
 
 function parseMatches(text) {
   // Current Pollaya layout for a played/locked match (concatenated textContent):
   //   "vie. 12 jun. 03:00 MEX(2)(0)CompararRSA"
   // The two parenthesised numbers are the REAL match score (home)(away).
-  // Upcoming matches render editable inputs (no parentheses), so they are
-  // naturally skipped. A short separator ("vs", a space, or nothing) may sit
-  // between the two parentheses, so we allow up to a few non-paren chars.
+  // Upcoming matches render editable inputs (no parentheses), so they are skipped.
   const matches = [];
   const seen = new Set();
   const days = { 'vie': 'Vie', 'sáb': 'Sáb', 'dom': 'Dom', 'lun': 'Lun', 'mar': 'Mar', 'mié': 'Mié', 'jue': 'Jue' };
   const monthMap = { 'ene': 'Ene', 'feb': 'Feb', 'mar': 'Mar', 'abr': 'Abr', 'may': 'May', 'jun': 'Jun', 'jul': 'Jul', 'ago': 'Ago', 'sep': 'Sep', 'oct': 'Oct', 'nov': 'Nov', 'dic': 'Dic' };
-  // No `i` flag: keep [A-Z] strictly uppercase so team codes aren't polluted by
-  // the lowercase day name that follows. The away code is bounded by a lookahead
-  // for the next token (a section header, the next match's lowercase date, or end).
   const re = /(vie|sáb|dom|lun|mar|mié|jue)\.\s*(\d{1,2})\s+(\w+)\.\s*[\d:]+\s*([A-Z]{2,4})\s*\((\d+)\)[^()]{0,8}\((\d+)\)\s*Comparar\s*([A-Z]{2,4}?)(?=Grupo|Hoy|Octavos|Cuartos|Semifinal|Final|Tercer|[a-z\s]|$)/g;
   let m;
   while ((m = re.exec(text)) !== null) {
-    const [, day, dom, mon, home, hg, ag, away] = m;
-    const key = `${home}-${away}`;
-    if (seen.has(key)) continue;       // de-dupe ("Hoy se juega" repeats group matches)
+    const day = m[1], dom = m[2], mon = m[3], home = m[4], hg = m[5], ag = m[6], away = m[7];
+    const key = home + '-' + away;
+    if (seen.has(key)) continue;
     seen.add(key);
-    const date = `${days[day.toLowerCase()] || day} ${dom} ${monthMap[mon.toLowerCase()] || mon}`;
+    const date = (days[day.toLowerCase()] || day) + ' ' + dom + ' ' + (monthMap[mon.toLowerCase()] || mon);
     matches.push({ date, home, away, hg: parseInt(hg), ag: parseInt(ag), group: '?' });
   }
   return matches;
@@ -183,8 +191,7 @@ function parseUserPredictions(text) {
   const re = /([A-Z]{2,4})\s*\((\d+)\)[^()]{0,8}\((\d+)\)\s*Comparar\s*([A-Z]{2,4}?)(?=Grupo|Hoy|Octavos|Cuartos|Semifinal|Final|Tercer|[a-z\s]|$)/g;
   let m;
   while ((m = re.exec(text)) !== null) {
-    const [, home, phg, pag, away] = m;
-    preds.push({ home, away, hg: parseInt(phg), ag: parseInt(pag) });
+    preds.push({ home: m[1], away: m[4], hg: parseInt(m[2]), ag: parseInt(m[3]) });
   }
   return preds;
 }
@@ -208,4 +215,4 @@ function computeAccuracy(predictions, actualMatches) {
   };
 }
 
-main().catch(e => { console.error('❌', e.message); process.exit(1); });
+main().catch(e => { console.error('ERROR', e.message); process.exit(1); });
